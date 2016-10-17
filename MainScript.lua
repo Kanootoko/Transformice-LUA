@@ -18,6 +18,8 @@ function eventKeyboard(playerName, key, down, x, y)
         tfm.exec.setShaman(playerName)
     elseif key == 80 then                       --'p'
         tfm.exec.addShamanObject(24, x, y + 10)
+    elseif key == 105 then                      -- gray-9
+        tfm.exec.setNameColor(playerName, math.random(0, 0xFFFFFF))
     elseif key == 16 then                       --'Shift'
         tfm.exec.movePlayer(playerName, x, y - 50, false, 0, -10, false)
     elseif key == 9 then do                     -- 'tab'
@@ -25,20 +27,20 @@ function eventKeyboard(playerName, key, down, x, y)
             system.bindMouse(playerName, true)
         end
         mouse[playerName]["spawn"]["need"] = true
-    end elseif key == 192 then do                   -- 'apostrophe: [`] '
+    end elseif key == 192 then do               -- 'apostrophe: [`] '
         mouse[playerName]["spawn"]["need"] = false
         if mouse[playerName]["jump"] == false then
             system.bindMouse(playerName, false)
         end
     end elseif key == 219 then                  -- '['
         mouse[playerName]["spawn"]["id"] = 26   -- blue portal
-    elseif key == 221 then       -- ']'
+    elseif key == 221 then                      -- ']'
         mouse[playerName]["spawn"]["id"] = 27   -- orange portal
-    elseif key == 66 then        -- 'u'
+    elseif key == 66 then                       -- 'u'
         mouse[playerName]["spawn"]["id"] = 59   -- bubble
-    elseif key == 45 then        -- 'p'
+    elseif key == 45 then                       -- 'p'
         tfm.exec.explosion(x, y, 10, 50, false)
-    elseif key == 115 then       -- 'F4'
+    elseif key == 115 then                      -- 'F4'
         if mouse[playerName]["spawn"]["need"] == false and mouse[playerName]["jump"] == false then
             system.bindMouse(playerName, true)
         end
