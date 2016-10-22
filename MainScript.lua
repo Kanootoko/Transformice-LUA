@@ -13,6 +13,13 @@ function eventNewPlayer(playerName)
 	                    }
 end    
 
+function eventPlayerLeft(playerName)
+    if mouse[playerName]["spawn"]["need"] == true or mouse[playerName]["jump"] == true then
+        system.bindMouse(playerName, false)
+    end
+    mouse[playerName] = nil
+end
+
 function eventKeyboard(playerName, key, down, x, y)
     if key == 79 then                           --'o'
         tfm.exec.setShaman(playerName)
@@ -36,9 +43,11 @@ function eventKeyboard(playerName, key, down, x, y)
         mouse[playerName]["spawn"]["id"] = 26   -- blue portal
     elseif key == 221 then                      -- ']'
         mouse[playerName]["spawn"]["id"] = 27   -- orange portal
-    elseif key == 66 then                       -- 'u'
+    elseif key == 66 then                       -- 'b'
         mouse[playerName]["spawn"]["id"] = 59   -- bubble
-    elseif key == 45 then                       -- 'p'
+    elseif key == 120 then                      -- 'F9'
+        mouse[playerName]["spawn"]["id"] = -1
+    elseif key == 45 then                       -- 'insert'
         tfm.exec.explosion(x, y, 10, 50, false)
     elseif key == 115 then                      -- 'F4'
         if mouse[playerName]["spawn"]["need"] == false and mouse[playerName]["jump"] == false then
@@ -48,9 +57,34 @@ function eventKeyboard(playerName, key, down, x, y)
     end
 end
 
+function killObject(objX, objY)
+    local best, bestVal, bestValDebug = -1, 500, 9999
+    for i, val in pairs(tfm.get.room.objectList) do
+        local iVal = math.pow(val["x"] - objX, 2) + math.pow(val["y"] - objY, 2)
+        if iVal < bestVal then
+            best = i
+            bestVal = iVal
+        end
+        if iVal < bestValDebug then
+            bestValDebug = iVal
+        end
+    end
+    if best ~= -1 then
+        tfm.exec.removeObject(best)
+    else do
+        print("No object to be found: ")
+        print(bestValDebug)
+    end
+    end
+end
+
 function eventMouse(playerName, x, y)
     if mouse[playerName]["spawn"]["need"] == true then
-        tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, 0, 0, 0)
+        if mouse[playerName]["spawn"]["id"] == -1 then
+            killObject(x, y)
+        else
+            tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, 0, 0, 0)
+        end
     end
     if mouse[playerName]["jump"] == true then do
         tfm.exec.movePlayer(playerName, x, y, false, 0, 0, false)
@@ -71,6 +105,9 @@ function eventEmotePlayed(playerName, emo)
     end
 end
 
+-- programm
+
 for name, player in pairs(tfm.get.room.playerList) do
     eventNewPlayer(name)
 end
+tfm.exec.disableAllShamanSkills(false)
