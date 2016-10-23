@@ -20,6 +20,10 @@ function eventPlayerLeft(playerName)
     mouse[playerName] = nil
 end
 
+function eventPlayerDied(playerName)
+    tfm.exec.respawnPlayer(playerName)
+end
+
 function eventKeyboard(playerName, key, down, x, y)
     if key == 79 then                           --'o'
         tfm.exec.setShaman(playerName)
@@ -57,24 +61,34 @@ function eventKeyboard(playerName, key, down, x, y)
     end
 end
 
+function eventChatCommand(playerName, message)
+    if message == "clear" then do
+        local ids = {}
+        local k = 1
+        for i in pairs(tfm.get.room.objectList) do
+            ids[k] = i
+            k = k + 1
+        end
+        for i = 1, k do
+            tfm.exec.removeObject(ids[i])
+            ids[i] = nil
+        end
+    end elseif sameStart(message, "spawn") == true then
+        mouse[playerName]["spawn"]["id"] = tonumber(string.sub(message, 7, string.len(message)))
+    end
+end
+
 function killObject(objX, objY)
-    local best, bestVal, bestValDebug = -1, 500, 9999
+    local best, bestVal = -1, 600
     for i, val in pairs(tfm.get.room.objectList) do
         local iVal = math.pow(val["x"] - objX, 2) + math.pow(val["y"] - objY, 2)
         if iVal < bestVal then
             best = i
             bestVal = iVal
         end
-        if iVal < bestValDebug then
-            bestValDebug = iVal
-        end
     end
     if best ~= -1 then
         tfm.exec.removeObject(best)
-    else do
-        print("No object to be found: ")
-        print(bestValDebug)
-    end
     end
 end
 
@@ -105,9 +119,21 @@ function eventEmotePlayed(playerName, emo)
     end
 end
 
+function sameStart(str1, str2)
+    for i = 1, math.min(string.len(str1), string.len(str2)) do
+        if str1[i] ~= str2[i] then
+            return false
+        end
+    end
+    return true
+end
+
 -- programm
 
-for name, player in pairs(tfm.get.room.playerList) do
-    eventNewPlayer(name)
+for playerName in pairs(tfm.get.room.playerList) do
+    eventNewPlayer(playerName)
 end
-tfm.exec.disableAllShamanSkills(false)
+tfm.exec.disableAutoShaman(true)
+tfm.exec.disableAutoNewGame(true)
+tfm.exec.disableAutoTimeLeft(true)
+system.disableChatCommandDisplay("!", yes)
