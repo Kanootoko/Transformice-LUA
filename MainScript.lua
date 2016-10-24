@@ -201,6 +201,9 @@ function percentLow(a, b)
         swap = true
     end
     end
+    if absMin(40, b) == b then
+        return
+    end
     local newB = 40 * sign(b)
     local newA = a / b * newB
     if swap == true then
