@@ -1,4 +1,6 @@
 mouse = {}
+autoNewGame = true
+
 
 function eventNewPlayer(playerName)
     for i = 1, 255 do
@@ -7,7 +9,8 @@ function eventNewPlayer(playerName)
 	mouse[playerName] = {
 	                      ["spawn"] = {
 	                        ["id"] = 0,
-	                        ["need"] = false
+	                        ["need"] = false,
+	                        ["ghost"] = false
 	                      },
 	                      ["jump"] = false
 	                    }
@@ -62,31 +65,40 @@ function eventKeyboard(playerName, key, down, x, y)
 end
 
 function eventChatCommand(playerName, message)
+    message = string.lower(message)
     if message == "clear" then do
-        local ids = {}
-        local k = 1
-        for i in pairs(tfm.get.room.objectList) do
-            ids[k] = i
-            k = k + 1
+        local lastId = -1
+        for i, val in pairs(tfm.get.room.objectList) do
+            if lastId ~= -1 then
+                tfm.exec.removeObject(lastId)
+            end
+            lastId = val["id"]
         end
-        for i = 1, k do
-            tfm.exec.removeObject(ids[i])
-            ids[i] = nil
-        end
+        tfm.exec.removeObject(lastId)
     end elseif sameStart(message, "spawn") == true then
         mouse[playerName]["spawn"]["id"] = tonumber(string.sub(message, 7, string.len(message)))
+    elseif message == "autonewgame" then
+        autoNewGame = not autoNewGame
+        tfm.exec.disableAutoNewGame(autoNewGame)
+    elseif message == "ghost" then
+        mouse[playerName]["spawn"]["ghost"] = not mouse[playerName]["spawn"]["ghost"]
     end
 end
 
 function killObject(objX, objY)
-    local best, bestVal = -1, 600
+    local best, bestVal = -1, 1600
+--    local bestValDebug = 99999
     for i, val in pairs(tfm.get.room.objectList) do
         local iVal = math.pow(val["x"] - objX, 2) + math.pow(val["y"] - objY, 2)
         if iVal < bestVal then
             best = i
             bestVal = iVal
         end
+--        if iVal < bestValDebug then
+--            bestValDebug = iVal
+--        end
     end
+--    print("Best: " .. bestValDebug)
     if best ~= -1 then
         tfm.exec.removeObject(best)
     end
@@ -97,7 +109,7 @@ function eventMouse(playerName, x, y)
         if mouse[playerName]["spawn"]["id"] == -1 then
             killObject(x, y)
         else
-            tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, 0, 0, 0)
+            tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, 0, 0, 0, mouse[playerName]["spawn"]["ghost"])
         end
     end
     if mouse[playerName]["jump"] == true then do
@@ -120,12 +132,12 @@ function eventEmotePlayed(playerName, emo)
 end
 
 function sameStart(str1, str2)
-    for i = 1, math.min(string.len(str1), string.len(str2)) do
-        if str1[i] ~= str2[i] then
-            return false
-        end
-    end
-    return true
+    local len = math.min(string.len(str1), string.len(str2))
+    if string.sub(str1, 1, len) == string.sub(str2, 1, len) then
+        return true
+	else
+	    return false
+	end
 end
 
 -- programm
@@ -134,6 +146,7 @@ for playerName in pairs(tfm.get.room.playerList) do
     eventNewPlayer(playerName)
 end
 tfm.exec.disableAutoShaman(true)
-tfm.exec.disableAutoNewGame(true)
+tfm.exec.disableAutoNewGame(autoNewGame)
 tfm.exec.disableAutoTimeLeft(true)
-system.disableChatCommandDisplay("!", yes)
+system.disableChatCommandDisplay("spawn", true)
+system.disableChatCommandDisplay("ghost", true)
