@@ -63,20 +63,25 @@ function eventKeyboard(playerName, key, down, x, y)
             system.bindMouse(playerName, true)
         end
         mouse[playerName]["jump"] = true
+    elseif key == 104 then                      -- grey '8'
+        tfm.exec.respawnPlayer(playerName)
     end
 end
 
 function eventChatCommand(playerName, message)
     message = string.lower(message)
     if message == "clear" then do
-        local lastId = -1
-        for i, val in pairs(tfm.get.room.objectList) do
-            if lastId ~= -1 then
-                tfm.exec.removeObject(lastId)
-            end
-            lastId = val["id"]
+        local ids = {}
+        local k = 1
+        for i in pairs(tfm.get.room.objectList) do
+            ids[k] = i
+            k = k + 1
         end
-        tfm.exec.removeObject(lastId)
+        for i = 1, k do
+            tfm.exec.removeObject(ids[i])
+            ids[i] = nil
+        end
+
     end elseif sameStart(message, "spawn") == true then
         mouse[playerName]["spawn"]["id"] = tonumber(string.sub(message, 7, string.len(message)))
     elseif message == "autonewgame" then
@@ -92,16 +97,20 @@ function eventChatCommand(playerName, message)
             mouse[playerName]["spawn"]["1stStep"]["was"] = false
         end
         end
+    elseif message == "cheese" then
+        tfm.exec.giveCheese(playerName)
+    elseif message == "win" then
+        tfm.exec.playerVictory(playerName)
     end
 end
 
 function killObject(objX, objY)
-    local best, bestVal = -1, 1600
+    local best, bestVal = -1, 2000
 --    local bestValDebug = 99999
     for i, val in pairs(tfm.get.room.objectList) do
         local iVal = math.pow(val["x"] - objX, 2) + math.pow(val["y"] - objY, 2)
         if iVal < bestVal then
-            best = i
+            best = val["id"]
             bestVal = iVal
         end
 --        if iVal < bestValDebug then
@@ -128,10 +137,12 @@ function eventMouse(playerName, x, y)
             end else do
                 mouse[playerName]["spawn"]["1stStep"]["was"] = false
                 local len = math.pow(mouse[playerName]["spawn"]["1stStep"]["x"] - x, 2) + math.pow(mouse[playerName]["spawn"]["1stStep"]["y"] - y, 2)
-                local dx = math.min(40, (x - mouse[playerName]["spawn"]["1stStep"]["x"]) / len * 1000)
-                local dy = math.min(40, (y - mouse[playerName]["spawn"]["1stStep"]["y"]) / len * 1000)
-                print("x0 = " .. mouse[playerName]["spawn"]["1stStep"]["x"] .. ", y0 = " .. mouse[playerName]["spawn"]["1stStep"]["y"])
-                print("x1 = " .. x .. ", y1 = " .. y)
+                local dx = (x - mouse[playerName]["spawn"]["1stStep"]["x"]) * len / 24000
+                local dy = (y - mouse[playerName]["spawn"]["1stStep"]["y"]) * len / 24000
+                local ans = percentLow(dx, dy)
+                dx, dy = ans["a"], ans["b"]
+--                print("x0 = " .. mouse[playerName]["spawn"]["1stStep"]["x"] .. ", y0 = " .. mouse[playerName]["spawn"]["1stStep"]["y"])
+--                print("x1 = " .. x .. ", y1 = " .. y)
                 print("dx = " .. dx .. ", dy = " .. dy)
                 tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"],
                                          mouse[playerName]["spawn"]["1stStep"]["x"],
@@ -171,6 +182,33 @@ function sameStart(str1, str2)
 	end
 end
 
+function absMin(a, b)
+    if math.abs(a) < math.abs(b) then
+        return a
+    else
+        return b
+    end
+end
+
+function sign(a)
+    return a / math.abs(a)
+end
+
+function percentLow(a, b)
+    local swap = false
+    if absMin(a, b) == b then do
+        a, b = b, a
+        swap = true
+    end
+    end
+    local newB = 40 * sign(b)
+    local newA = a / b * newB
+    if swap == true then
+        a, b = b, a
+    end
+    return {["a"] = a, ["b"] = b}
+end
+
 -- programm
 
 for playerName in pairs(tfm.get.room.playerList) do
@@ -182,3 +220,6 @@ tfm.exec.disableAutoTimeLeft(true)
 tfm.exec.disableAfkDeath(true)
 system.disableChatCommandDisplay("spawn", true)
 system.disableChatCommandDisplay("ghost", true)
+system.disableChatCommandDisplay("2steps", true)
+system.disableChatCommandDisplay("win", true)
+system.disableChatCommandDisplay("cheese", true)
