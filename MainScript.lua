@@ -10,7 +10,9 @@ function eventNewPlayer(playerName)
 	                      ["spawn"] = {
 	                        ["id"] = 0,
 	                        ["need"] = false,
-	                        ["ghost"] = false
+	                        ["ghost"] = false,
+                            ["2steps"] = false,
+                            ["1stStep"] = {["was"] = false, ["x"] = 0, ["y"] = 0}
 	                      },
 	                      ["jump"] = false
 	                    }
@@ -82,6 +84,14 @@ function eventChatCommand(playerName, message)
         tfm.exec.disableAutoNewGame(autoNewGame)
     elseif message == "ghost" then
         mouse[playerName]["spawn"]["ghost"] = not mouse[playerName]["spawn"]["ghost"]
+    elseif message == "2steps" then
+        if mouse[playerName]["spawn"]["2steps"] == false then
+            mouse[playerName]["spawn"]["2steps"] = true
+        else do
+            mouse[playerName]["spawn"]["2steps"] = false
+            mouse[playerName]["spawn"]["1stStep"]["was"] = false
+        end
+        end
     end
 end
 
@@ -108,8 +118,29 @@ function eventMouse(playerName, x, y)
     if mouse[playerName]["spawn"]["need"] == true then
         if mouse[playerName]["spawn"]["id"] == -1 then
             killObject(x, y)
-        else
+        elseif mouse[playerName]["spawn"]["2steps"] == false then
             tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, 0, 0, 0, mouse[playerName]["spawn"]["ghost"])
+        else
+            if mouse[playerName]["spawn"]["1stStep"]["was"] == false then do
+                mouse[playerName]["spawn"]["1stStep"]["x"] = x
+                mouse[playerName]["spawn"]["1stStep"]["y"] = y
+                mouse[playerName]["spawn"]["1stStep"]["was"] = true
+            end else do
+                mouse[playerName]["spawn"]["1stStep"]["was"] = false
+                local len = math.pow(mouse[playerName]["spawn"]["1stStep"]["x"] - x, 2) + math.pow(mouse[playerName]["spawn"]["1stStep"]["y"] - y, 2)
+                local dx = math.min(40, (x - mouse[playerName]["spawn"]["1stStep"]["x"]) / len * 1000)
+                local dy = math.min(40, (y - mouse[playerName]["spawn"]["1stStep"]["y"]) / len * 1000)
+                print("x0 = " .. mouse[playerName]["spawn"]["1stStep"]["x"] .. ", y0 = " .. mouse[playerName]["spawn"]["1stStep"]["y"])
+                print("x1 = " .. x .. ", y1 = " .. y)
+                print("dx = " .. dx .. ", dy = " .. dy)
+                tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"],
+                                         mouse[playerName]["spawn"]["1stStep"]["x"],
+                                         mouse[playerName]["spawn"]["1stStep"]["y"],
+                                         0, dx, dy, mouse[playerName]["spawn"]["ghost"]
+                                        )
+
+            end
+            end
         end
     end
     if mouse[playerName]["jump"] == true then do
@@ -148,5 +179,6 @@ end
 tfm.exec.disableAutoShaman(true)
 tfm.exec.disableAutoNewGame(autoNewGame)
 tfm.exec.disableAutoTimeLeft(true)
+tfm.exec.disableAfkDeath(true)
 system.disableChatCommandDisplay("spawn", true)
 system.disableChatCommandDisplay("ghost", true)
