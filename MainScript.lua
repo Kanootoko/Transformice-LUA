@@ -14,7 +14,8 @@ function eventNewPlayer(playerName)
                             ["2steps"] = false,
                             ["1stStep"] = {["was"] = false, ["x"] = 0, ["y"] = 0}
 	                      },
-	                      ["jump"] = false
+	                      ["jump"] = false,
+	                      ["res"] = {["x"] = -1, ["y"] = -1}
 	                    }
 end    
 
@@ -27,6 +28,15 @@ end
 
 function eventPlayerDied(playerName)
     tfm.exec.respawnPlayer(playerName)
+    if mouse[playerName]["res"]["x"] ~= -1 or mouse[playerName]["res"]["y"] ~= -1 then
+        tfm.exec.movePlayer(playerName, mouse[playerName]["res"]["x"], mouse[playerName]["res"]["y"], false, 0, 0, false)
+    end
+end
+
+function eventNewGame()
+    for playerName in pairs(tfm.get.room.playerList) do
+        mouse[playerName]["res"]["x"], mouse[playerName]["res"]["y"] = -1, -1
+    end
 end
 
 function eventKeyboard(playerName, key, down, x, y)
@@ -63,8 +73,10 @@ function eventKeyboard(playerName, key, down, x, y)
             system.bindMouse(playerName, true)
         end
         mouse[playerName]["jump"] = true
-    elseif key == 104 then                      -- grey '8'
-        tfm.exec.respawnPlayer(playerName)
+    elseif key == 104 then do                   -- grey '8'
+        tfm.exec.killPlayer(playerName)
+        eventPlayerDied(playerName)
+    end
     end
 end
 
@@ -84,10 +96,10 @@ function eventChatCommand(playerName, message)
 
     end elseif sameStart(message, "spawn") == true then
         mouse[playerName]["spawn"]["id"] = tonumber(string.sub(message, 7, string.len(message)))
-    elseif message == "autonewgame" then
+    elseif message == "autonewgame" then do
         autoNewGame = not autoNewGame
         tfm.exec.disableAutoNewGame(autoNewGame)
-    elseif message == "ghost" then
+    end elseif message == "ghost" then
         mouse[playerName]["spawn"]["ghost"] = not mouse[playerName]["spawn"]["ghost"]
     elseif message == "2steps" then
         if mouse[playerName]["spawn"]["2steps"] == false then
@@ -101,6 +113,12 @@ function eventChatCommand(playerName, message)
         tfm.exec.giveCheese(playerName)
     elseif message == "win" then
         tfm.exec.playerVictory(playerName)
+    elseif message == "res" then do
+        pl = tfm.get.room.playerList[playerName]
+        mouse[playerName]["res"]["x"] = pl["x"]
+        mouse[playerName]["res"]["y"] = pl["y"]
+    end elseif message == "res null" then
+        mouse[playerName]["res"]["x"], mouse[playerName]["res"]["y"] = -1, -1
     end
 end
 
@@ -196,13 +214,13 @@ end
 
 function percentLow(a, b)
     local swap = false
+    if absMin(40, b) == b and absMin(40, a) == a then
+        return {["a"] = a, ["b"] = b}
+    end
     if absMin(a, b) == b then do
         a, b = b, a
         swap = true
     end
-    end
-    if absMin(40, b) == b then
-        return
     end
     local newB = 40 * sign(b)
     local newA = a / b * newB
