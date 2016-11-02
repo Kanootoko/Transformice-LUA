@@ -27,6 +27,9 @@ function eventPlayerLeft(playerName)
 end
 
 function eventPlayerDied(playerName)
+    if mouse[playerName] == nil then
+        return
+    end
     tfm.exec.respawnPlayer(playerName)
     if mouse[playerName]["res"]["x"] ~= -1 or mouse[playerName]["res"]["y"] ~= -1 then
         tfm.exec.movePlayer(playerName, mouse[playerName]["res"]["x"], mouse[playerName]["res"]["y"], false, 0, 0, false)
