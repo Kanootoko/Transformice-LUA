@@ -12,7 +12,10 @@ function eventNewPlayer(playerName)
 	                        ["need"] = false,
 	                        ["ghost"] = false,
                             ["2steps"] = false,
-                            ["1stStep"] = {["was"] = false, ["x"] = 0, ["y"] = 0}
+                            ["1stStep"] = {["was"] = false, ["x"] = 0, ["y"] = 0},
+                            ["speed"] = -1,
+                            ["absoluteAngle"] = false,
+                            ["angle"] = 0
 	                      },
 	                      ["jump"] = false,
 	                      ["res"] = {["x"] = -1, ["y"] = -1}
@@ -122,6 +125,13 @@ function eventChatCommand(playerName, message)
         mouse[playerName]["res"]["y"] = pl["y"]
     end elseif message == "res null" then
         mouse[playerName]["res"]["x"], mouse[playerName]["res"]["y"] = -1, -1
+    elseif sameStart(message, "speed") then do
+        mouse[playerName]["spawn"]["speed"] = tonumber(string.sub(message, 7, string.len(message)))
+        print(mouse[playerName]["spawn"]["speed"])
+    end elseif sameStart(message, "angle") then
+        mouse[playerName]["spawn"]["angle"] = tonumber(string.sub(message, 7, string.len(message)))
+    elseif message == "absoluteangle" then
+        mouse[playerName]["spawn"]["absoluteAngle"] = not mouse[playerName]["spawn"]["absoluteAngle"]
     end
 end
 
@@ -149,7 +159,7 @@ function eventMouse(playerName, x, y)
         if mouse[playerName]["spawn"]["id"] == -1 then
             killObject(x, y)
         elseif mouse[playerName]["spawn"]["2steps"] == false then
-            tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, 0, 0, 0, mouse[playerName]["spawn"]["ghost"])
+            tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"], x, y, mouse[playerName]["spawn"]["angle"], 0, 0, mouse[playerName]["spawn"]["ghost"])
         else
             if mouse[playerName]["spawn"]["1stStep"]["was"] == false then do
                 mouse[playerName]["spawn"]["1stStep"]["x"] = x
@@ -157,18 +167,38 @@ function eventMouse(playerName, x, y)
                 mouse[playerName]["spawn"]["1stStep"]["was"] = true
             end else do
                 mouse[playerName]["spawn"]["1stStep"]["was"] = false
-                local len = math.pow(mouse[playerName]["spawn"]["1stStep"]["x"] - x, 2) + math.pow(mouse[playerName]["spawn"]["1stStep"]["y"] - y, 2)
-                local dx = (x - mouse[playerName]["spawn"]["1stStep"]["x"]) * len / 24000
-                local dy = (y - mouse[playerName]["spawn"]["1stStep"]["y"]) * len / 24000
-                local ans = percentLow(dx, dy)
-                dx, dy = ans["a"], ans["b"]
+                local vx = x - mouse[playerName]["spawn"]["1stStep"]["x"]  -- vector x0->x1
+                local vy = y - mouse[playerName]["spawn"]["1stStep"]["y"]  -- vector y0->y1
+                local dx, dy
+                if mouse[playerName]["spawn"]["speed"] < 0 then do
+                    local len = math.pow(vx, 2) + math.pow(vy, 2)
+                    dx = vx * len / 24000
+                    dy = vy * len / 24000
+                    local ans = percentLow(dx, dy)
+                    dx, dy = ans["a"], ans["b"]
+                end
+                else do
+                    dx = mouse[playerName]["spawn"]["speed"] * sign(vx)
+                    dy = math.abs(dx) * sign(vy)
+                end
+                end
 --                print("x0 = " .. mouse[playerName]["spawn"]["1stStep"]["x"] .. ", y0 = " .. mouse[playerName]["spawn"]["1stStep"]["y"])
 --                print("x1 = " .. x .. ", y1 = " .. y)
                 print("dx = " .. dx .. ", dy = " .. dy)
+                local angle
+                if mouse[playerName]["spawn"]["absoluteAngle"] == true then
+                    angle = mouse[playerName]["spawn"]["angle"]
+                else
+                    if mouse[playerName]["spawn"]["id"] == 17 then
+                        angle = mouse[playerName]["spawn"]["angle"] + getAngleCannon(vx, vy)
+                    else
+                        angle = mouse[playerName]["spawn"]["angle"] + getAngle(vx, vy)
+                    end
+                end
                 tfm.exec.addShamanObject(mouse[playerName]["spawn"]["id"],
                                          mouse[playerName]["spawn"]["1stStep"]["x"],
                                          mouse[playerName]["spawn"]["1stStep"]["y"],
-                                         0, dx, dy, mouse[playerName]["spawn"]["ghost"]
+                                         angle, dx, dy, mouse[playerName]["spawn"]["ghost"]
                                         )
 
             end
@@ -212,7 +242,13 @@ function absMin(a, b)
 end
 
 function sign(a)
-    return a / math.abs(a)
+    if a > 0 then
+        return 1
+    elseif a == 0 then
+        return 0
+    else
+        return -1
+    end
 end
 
 function percentLow(a, b)
@@ -228,10 +264,47 @@ function percentLow(a, b)
     local newB = 40 * sign(b)
     local newA = a / b * newB
     if swap == true then
-        a, b = b, a
+        newA, newB = newB, newA
     end
-    return {["a"] = a, ["b"] = b}
+    return {["a"] = newA, ["b"] = newB}
 end
+
+function getAngleCannon(x, y) -- returns (-) angle by vector coords
+    print("math.atan = ", math.atan(x / y))
+
+    if x > 0 then
+        return 90 - math.deg(math.atan(x / y))
+    else
+        return -90 - math.deg(math.atan(x / y))
+    end
+end
+
+function getAngle(x, y)
+    y = -y
+    if x == 0 then
+        if y >= 0 then
+            return -90
+        else
+            return 90
+        end
+    elseif y == 0 then
+        if x >= 0 then
+            return 0
+        else
+            return -180
+        end
+    end
+    if x > 0 then
+        return -math.deg(math.atan(y / x))
+    else
+        return -180 - math.deg(math.atan(y / x))
+    end
+end
+
+function getAngleCannon(x, y)
+    return getAngle(x, y) + 90
+end
+
 
 -- programm
 
@@ -245,5 +318,8 @@ tfm.exec.disableAfkDeath(true)
 system.disableChatCommandDisplay("spawn", true)
 system.disableChatCommandDisplay("ghost", true)
 system.disableChatCommandDisplay("2steps", true)
+system.disableChatCommandDisplay("angle", true)
+system.disableChatCommandDisplay("absoluteangle", true)
+system.disableChatCommandDisplay("speed", true)
 system.disableChatCommandDisplay("win", true)
 system.disableChatCommandDisplay("cheese", true)
