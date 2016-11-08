@@ -1,5 +1,7 @@
 mouse = {}
-autoNewGame = true
+autoNewGame = false
+autoNewShaman = false
+afkDeath = false
 
 
 function eventNewPlayer(playerName)
@@ -104,7 +106,13 @@ function eventChatCommand(playerName, message)
         mouse[playerName]["spawn"]["id"] = tonumber(string.sub(message, 7, string.len(message)))
     elseif message == "autonewgame" then do
         autoNewGame = not autoNewGame
-        tfm.exec.disableAutoNewGame(autoNewGame)
+        tfm.exec.disableAutoNewGame(not autoNewGame)
+    end elseif message == "autonewshaman" then do
+        autoNewShaman = not autoNewShaman
+        tfm.exec.disableAutoShaman(not autoNewShaman)
+    end elseif message == "afkdeath" then do
+        afkDeath = not afkDeath
+        tfm.exec.disableAfkDeath(not afkDeath)
     end elseif message == "ghost" then
         mouse[playerName]["spawn"]["ghost"] = not mouse[playerName]["spawn"]["ghost"]
     elseif message == "2steps" then
@@ -269,16 +277,6 @@ function percentLow(a, b)
     return {["a"] = newA, ["b"] = newB}
 end
 
-function getAngleCannon(x, y) -- returns (-) angle by vector coords
-    print("math.atan = ", math.atan(x / y))
-
-    if x > 0 then
-        return 90 - math.deg(math.atan(x / y))
-    else
-        return -90 - math.deg(math.atan(x / y))
-    end
-end
-
 function getAngle(x, y)
     y = -y
     if x == 0 then
@@ -311,10 +309,10 @@ end
 for playerName in pairs(tfm.get.room.playerList) do
     eventNewPlayer(playerName)
 end
-tfm.exec.disableAutoShaman(true)
-tfm.exec.disableAutoNewGame(autoNewGame)
+tfm.exec.disableAutoShaman(not autoNewShaman)
+tfm.exec.disableAutoNewGame(not autoNewGame)
 tfm.exec.disableAutoTimeLeft(true)
-tfm.exec.disableAfkDeath(true)
+tfm.exec.disableAfkDeath(not afkDeath)
 system.disableChatCommandDisplay("spawn", true)
 system.disableChatCommandDisplay("ghost", true)
 system.disableChatCommandDisplay("2steps", true)
