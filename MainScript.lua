@@ -97,11 +97,11 @@ function eventChatCommand(playerName, message)
             ids[k] = i
             k = k + 1
         end
-        for i = 1, k do
+        for i = 1, k - 1 do
             tfm.exec.removeObject(ids[i])
             ids[i] = nil
         end
-
+        ids = nil
     end elseif sameStart(message, "spawn") == true then
         mouse[playerName]["spawn"]["id"] = tonumber(string.sub(message, 7, string.len(message)))
     elseif message == "autonewgame" then do
