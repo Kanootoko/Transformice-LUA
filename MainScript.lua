@@ -22,6 +22,7 @@ function eventNewPlayer(playerName)
 	                      ["jump"] = false,
 	                      ["res"] = {["x"] = -1, ["y"] = -1}
 	                    }
+    tfm.exec.respawnPlayer(playerName)
 end    
 
 function eventPlayerLeft(playerName)
@@ -321,3 +322,4 @@ system.disableChatCommandDisplay("absoluteangle", true)
 system.disableChatCommandDisplay("speed", true)
 system.disableChatCommandDisplay("win", true)
 system.disableChatCommandDisplay("cheese", true)
+system.disableChatCommandDisplay("res", true)
